@@ -1,0 +1,46 @@
+# Ignore build outputs
+**/bin/
+**/obj/
+**/out/
+
+# Ignore git files
+.git/
+.gitignore
+.gitattributes
+
+# Ignore IDE and editor files
+.vs/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Ignore temporary files
+**/temp/
+**/tmp/
+**/*.tmp
+**/*.log
+
+# Ignore NuGet packages
+*.nupkg
+*.snupkg
+packages/
+
+# Ignore test results
+TestResults/
+**/*.trx
+**/*.coverage
+
+# Ignore Docker files from being copied
+**/Dockerfile*
+**/docker-compose*
+**/.dockerignore
+
+# Ignore documentation
+README.md
+LICENSE
+*.md
+
+# Ignore configuration that shouldn't be in containers
+**/*.Development.json

@@ -1,0 +1,78 @@
+name: Build and push container images
+
+# Triggers on push to main or dev branches
+on:
+  push:
+    branches: ['main', 'dev']
+
+# Environment variables for the workflow
+env:
+  REGISTRY: acraksdemo.azurecr.io
+  API_IMAGE_NAME: aspireapp-apiservice
+  WEB_IMAGE_NAME: aspireapp-web
+
+jobs:
+  build-and-push-images:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Azure Login with Workload Identity
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      
+      - name: Log in to Azure Container Registry
+        run: az acr login --name acraksdemo
+      
+      # Build and push API Service
+      - name: Extract metadata for API Service
+        id: meta-api
+        uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.API_IMAGE_NAME }}
+      
+      - name: Build and push API Service image
+        id: push-api
+        uses: docker/build-push-action@f2a1d5e99d037542a71f64918e516c093c6f3fc4
+        with:
+          context: .
+          push: true
+          file: AspireApp.ApiService/Dockerfile
+          tags: |
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.API_IMAGE_NAME }}:${{ github.ref_name }}
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.API_IMAGE_NAME }}:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.API_IMAGE_NAME }}:latest
+          labels: ${{ steps.meta-api.outputs.labels }}
+      
+      # Build and push Web Frontend
+      - name: Extract metadata for Web Frontend
+        id: meta-web
+        uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.WEB_IMAGE_NAME }}
+      
+      - name: Build and push Web Frontend image
+        id: push-web
+        uses: docker/build-push-action@f2a1d5e99d037542a71f64918e516c093c6f3fc4
+        with:
+          context: .
+          push: true
+          file: AspireApp.Web/Dockerfile
+          tags: |
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.WEB_IMAGE_NAME }}:${{ github.ref_name }}
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.WEB_IMAGE_NAME }}:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.WEB_IMAGE_NAME }}:latest
+          labels: ${{ steps.meta-web.outputs.labels }}
+      
+      - name: Output image digests
+        run: |
+          echo "API Service image digest: ${{ steps.push-api.outputs.digest }}"
+          echo "Web Frontend image digest: ${{ steps.push-web.outputs.digest }}"

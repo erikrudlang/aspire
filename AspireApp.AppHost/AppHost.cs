@@ -4,15 +4,22 @@ var aks = builder.AddAzureKubernetesEnvironment("aks");
 
 var cache = builder.AddRedis("cache");
 
-var apiService = builder.AddProject<Projects.AspireApp_ApiService>("apiservice")
+var apiService = builder.AddContainer("apiservice", "aspireapp-apiservice")
+    .WithDockerfile("../AspireApp.ApiService")
+    .WithHttpEndpoint(port: 8080, targetPort: 8080, name: "http")
+    .WithHttpsEndpoint(port: 8081, targetPort: 8081, name: "https")
     .WithHttpHealthCheck("/health");
 
-builder.AddProject<Projects.AspireApp_Web>("webfrontend")
+builder.AddContainer("webfrontend", "aspireapp-web")
+    .WithDockerfile("../AspireApp.Web")
+    .WithHttpEndpoint(port: 8080, targetPort: 8080, name: "http")
+    .WithHttpsEndpoint(port: 8081, targetPort: 8081, name: "https")
     .WithExternalHttpEndpoints()
     .WithHttpHealthCheck("/health")
     .WithReference(cache)
     .WaitFor(cache)
-    .WithReference(apiService)
+    .WithEnvironment("services__apiservice__http__0", apiService.GetEndpoint("http"))
+    .WithEnvironment("services__apiservice__https__0", apiService.GetEndpoint("https"))
     .WaitFor(apiService);
 
 builder.Build().Run();
