@@ -186,3 +186,5 @@ MigrationBackup/
 
 # Aspire related
 *.lscache
+
+AspireApp.AppHost/aspire-output/*
