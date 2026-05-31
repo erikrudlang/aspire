@@ -1,9 +1,17 @@
 var builder = WebApplication.CreateBuilder(args);
 
-ILogger? logger = null;
+// Create an early logger using the builder's logging
+using var loggerFactory = LoggerFactory.Create(logging =>
+{
+    logging.AddConsole();
+    logging.SetMinimumLevel(LogLevel.Information);
+});
+var logger = loggerFactory.CreateLogger<Program>();
 
 try
 {
+    logger.LogInformation("Starting application configuration...");
+
     // Add service defaults & Aspire client integrations.
     builder.AddServiceDefaults(logger);
 
@@ -13,11 +21,12 @@ try
     // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
     builder.Services.AddOpenApi();
 
+    logger.LogInformation("Building application...");
     var app = builder.Build();
 
-    // Get logger after app is built
-    logger = app.Services.GetRequiredService<ILogger<Program>>();
-    logger.LogInformation("Application starting up...");
+    // Get the DI logger after app is built
+    var appLogger = app.Services.GetRequiredService<ILogger<Program>>();
+    appLogger.LogInformation("Application starting up...");
 
     // Configure the HTTP request pipeline.
     app.UseExceptionHandler();
@@ -47,20 +56,14 @@ try
 
     app.MapDefaultEndpoints();
 
-    logger.LogInformation("Application configured successfully, starting web host...");
+    appLogger.LogInformation("Application configured successfully, starting web host...");
 
     app.Run();
 }
 catch (Exception ex)
 {
-    if (logger != null)
-    {
-        logger.LogCritical(ex, "Application failed to start");
-    }
-    else
-    {
-        Console.WriteLine($"FATAL ERROR during startup: {ex}");
-    }
+    logger.LogCritical(ex, "Application failed to start");
+    Console.WriteLine($"FATAL ERROR during startup: {ex}");
     throw;
 }
 

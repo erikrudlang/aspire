@@ -3,8 +3,15 @@ using AspireApp.Web.Components;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Create an early logger using the builder's logging
+using var loggerFactory = LoggerFactory.Create(logging =>
+{
+    logging.AddConsole();
+    logging.SetMinimumLevel(LogLevel.Information);
+});
+var logger = loggerFactory.CreateLogger<Program>();
 // Add service defaults & Aspire client integrations.
-builder.AddServiceDefaults();
+builder.AddServiceDefaults(logger);
 builder.AddRedisOutputCache("cache");
 
 // Add services to the container.
