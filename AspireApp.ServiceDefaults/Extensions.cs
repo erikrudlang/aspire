@@ -94,6 +94,7 @@ public static class Extensions
 
         if (useOtlpExporter)
         {
+            logger.LogInformation("OTLP exporter is configured. Setting up OTLP exporter. Endpoint: {OtlpEndpoint}", builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"]);
             builder.Services.AddOpenTelemetry().UseOtlpExporter();
         }
 
