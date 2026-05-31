@@ -20,9 +20,9 @@ public static class Extensions
     private const string HealthEndpointPath = "/health";
     private const string AlivenessEndpointPath = "/alive";
 
-    public static TBuilder AddServiceDefaults<TBuilder>(this TBuilder builder) where TBuilder : IHostApplicationBuilder
+    public static TBuilder AddServiceDefaults<TBuilder>(this TBuilder builder, ILogger logger) where TBuilder : IHostApplicationBuilder
     {
-        builder.ConfigureOpenTelemetry();
+        builder.ConfigureOpenTelemetry(logger);
 
         builder.AddDefaultHealthChecks();
 
@@ -46,7 +46,7 @@ public static class Extensions
         return builder;
     }
 
-    public static TBuilder ConfigureOpenTelemetry<TBuilder>(this TBuilder builder) where TBuilder : IHostApplicationBuilder
+    public static TBuilder ConfigureOpenTelemetry<TBuilder>(this TBuilder builder, ILogger logger) where TBuilder : IHostApplicationBuilder
     {
         builder.Logging.AddOpenTelemetry(logging =>
         {
@@ -78,14 +78,19 @@ public static class Extensions
                     .AddConsoleExporter();
             });
 
-        builder.AddOpenTelemetryExporters();
+        builder.AddOpenTelemetryExporters(logger);
 
         return builder;
     }
 
-    private static TBuilder AddOpenTelemetryExporters<TBuilder>(this TBuilder builder) where TBuilder : IHostApplicationBuilder
+    private static TBuilder AddOpenTelemetryExporters<TBuilder>(this TBuilder builder, ILogger logger) where TBuilder : IHostApplicationBuilder
     {
         var useOtlpExporter = !string.IsNullOrWhiteSpace(builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"]);
+
+        if (!useOtlpExporter)
+        {
+            logger.LogWarning("OTLP exporter is not configured. Skipping OTLP exporter setup.");
+        }
 
         if (useOtlpExporter)
         {
