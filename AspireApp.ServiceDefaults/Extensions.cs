@@ -8,6 +8,7 @@ using OpenTelemetry;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 using OpenTelemetry.Logs;
+using OpenTelemetry.Resources;
 
 
 namespace Microsoft.Extensions.Hosting;
@@ -52,18 +53,22 @@ public static class Extensions
         {
             logging.IncludeFormattedMessage = true;
             logging.IncludeScopes = true;
+            logging.SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(serviceName: builder.Environment.ApplicationName));
             logging.AddConsoleExporter();
         });
 
         builder.Services.AddOpenTelemetry()
             .WithMetrics(metrics =>
             {
+                metrics.SetResourceBuilder(OpenTelemetry.Resources.ResourceBuilder.CreateDefault().AddService(builder.Environment.ApplicationName));
                 metrics.AddAspNetCoreInstrumentation()
                     .AddHttpClientInstrumentation()
+
                     .AddRuntimeInstrumentation();
             })
             .WithTracing(tracing =>
             {
+                tracing.SetResourceBuilder(OpenTelemetry.Resources.ResourceBuilder.CreateDefault().AddService(builder.Environment.ApplicationName));
                 tracing.AddSource(builder.Environment.ApplicationName)
                     .AddAspNetCoreInstrumentation(tracing =>
                         // Exclude health check requests from tracing
