@@ -11,11 +11,13 @@
   <ItemGroup>
     <ProjectReference Include="..\AspireApp.ApiService\AspireApp.ApiService.csproj" />
     <ProjectReference Include="..\AspireApp.Web\AspireApp.Web.csproj" />
+    <ProjectReference Include="..\AspireApp.MigrationService\AspireApp.MigrationService.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Aspire.Hosting.Azure.Kubernetes" Version="13.3.2-preview.1.26263.11" />
     <PackageReference Include="Aspire.Hosting.Redis" Version="13.3.2" />
+    <PackageReference Include="Aspire.Hosting.SqlServer" Version="13.4.2" />
   </ItemGroup>
 
 </Project>

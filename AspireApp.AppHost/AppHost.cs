@@ -4,22 +4,28 @@ var aks = builder.AddAzureKubernetesEnvironment("aks");
 
 var cache = builder.AddRedis("cache");
 
-var apiService = builder.AddContainer("apiservice", "aspireapp-apiservice")
-    .WithDockerfile("../AspireApp.ApiService")
-    .WithHttpEndpoint(port: 8080, targetPort: 8080, name: "http")
-    .WithHttpsEndpoint(port: 8081, targetPort: 8081, name: "https")
-    .WithHttpHealthCheck("/health");
+// Add SQL Server
+var sqlServer = builder.AddSqlServer("sqlserver")
+    .WithDataVolume();
 
-builder.AddContainer("webfrontend", "aspireapp-web")
-    .WithDockerfile("../AspireApp.Web")
-    .WithHttpEndpoint(port: 8080, targetPort: 8080, name: "http")
-    .WithHttpsEndpoint(port: 8081, targetPort: 8081, name: "https")
-    .WithExternalHttpEndpoints()
-    .WithHttpHealthCheck("/health")
+var database = sqlServer.AddDatabase("aspireappdb");
+
+// Add migration service to run migrations
+var migrationService = builder.AddProject<Projects.AspireApp_MigrationService>("migrationservice")
+    .WithReference(database)
+    .WaitFor(sqlServer);
+
+var apiService = builder.AddProject<Projects.AspireApp_ApiService>("apiservice")
+    .WithReference(database)
     .WithReference(cache)
+    .WaitFor(database)
+    .WaitFor(migrationService);
+
+builder.AddProject<Projects.AspireApp_Web>("webfrontend")
+    .WithExternalHttpEndpoints()
+    .WithReference(cache)
+    .WithReference(apiService)
     .WaitFor(cache)
-    .WithEnvironment("services__apiservice__http__0", apiService.GetEndpoint("http"))
-    .WithEnvironment("services__apiservice__https__0", apiService.GetEndpoint("https"))
     .WaitFor(apiService);
 
 builder.Build().Run();

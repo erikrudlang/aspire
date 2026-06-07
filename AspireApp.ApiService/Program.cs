@@ -1,3 +1,7 @@
+using AspireApp.Persistence.Data;
+using AspireApp.Persistence.Models;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Create an early logger using the builder's logging
@@ -17,6 +21,14 @@ try
 
     // Add services to the container.
     builder.Services.AddProblemDetails();
+
+    // Configure DbContext with migrations assembly
+    builder.Services.AddDbContext<ApiDbContext>(options =>
+        options.UseSqlServer(
+            builder.Configuration.GetConnectionString("DefaultConnection") ??
+            "Server=(localdb)\\mssqllocaldb;Database=AspireAppDb;Trusted_Connection=True;MultipleActiveResultSets=true",
+            sqlOptions => sqlOptions.MigrationsAssembly("AspireApp.MigrationService")
+        ));
 
     // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
     builder.Services.AddOpenApi();
@@ -40,17 +52,31 @@ try
 
     app.MapGet("/", () => "API service is running. Navigate to /weatherforecast to see sample data.");
 
-    app.MapGet("/weatherforecast", () =>
+    app.MapGet("/weatherforecast", async (ApiDbContext db) =>
     {
-        var forecast = Enumerable.Range(1, 5).Select(index =>
-            new WeatherForecast
-            (
-                DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-                Random.Shared.Next(-20, 55),
-                summaries[Random.Shared.Next(summaries.Length)]
-            ))
-            .ToArray();
-        return forecast;
+        var forecasts = await db.WeatherForecasts.ToListAsync();
+
+        // If no data exists, seed some sample data
+        if (!forecasts.Any())
+        {
+            string[] summaries = ["Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"];
+
+            var newForecasts = Enumerable.Range(1, 5).Select(index =>
+                new WeatherForecast
+                {
+                    Date = DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
+                    TemperatureC = Random.Shared.Next(-20, 55),
+                    Summary = summaries[Random.Shared.Next(summaries.Length)]
+                })
+                .ToList();
+
+            db.WeatherForecasts.AddRange(newForecasts);
+            await db.SaveChangesAsync();
+
+            forecasts = newForecasts;
+        }
+
+        return forecasts;
     })
     .WithName("GetWeatherForecast");
 
@@ -65,9 +91,4 @@ catch (Exception ex)
     logger.LogCritical(ex, "Application failed to start");
     Console.WriteLine($"FATAL ERROR during startup: {ex}");
     throw;
-}
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
 }
