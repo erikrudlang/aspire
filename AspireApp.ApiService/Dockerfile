@@ -6,6 +6,7 @@ WORKDIR /src
 COPY ["AspireApp.sln", "./"]
 COPY ["AspireApp.ApiService/AspireApp.ApiService.csproj", "AspireApp.ApiService/"]
 COPY ["AspireApp.ServiceDefaults/AspireApp.ServiceDefaults.csproj", "AspireApp.ServiceDefaults/"]
+COPY ["AspireApp.Persistence/AspireApp.Persistence.csproj", "AspireApp.Persistence/"]
 
 # Restore dependencies
 RUN dotnet restore "AspireApp.ApiService/AspireApp.ApiService.csproj"
@@ -13,7 +14,7 @@ RUN dotnet restore "AspireApp.ApiService/AspireApp.ApiService.csproj"
 # Copy the rest of the source code
 COPY ["AspireApp.ApiService/", "AspireApp.ApiService/"]
 COPY ["AspireApp.ServiceDefaults/", "AspireApp.ServiceDefaults/"]
-
+COPY ["AspireApp.Persistence/", "AspireApp.Persistence/"]
 # Build the application
 WORKDIR "/src/AspireApp.ApiService"
 RUN dotnet build "AspireApp.ApiService.csproj" -c Release -o /app/build
