@@ -53,14 +53,14 @@ public static class Extensions
         {
             logging.IncludeFormattedMessage = true;
             logging.IncludeScopes = true;
-            logging.SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(serviceName: builder.Environment.ApplicationName));
+            logging.SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(serviceName: "TestService"));
             logging.AddConsoleExporter();
         });
 
         builder.Services.AddOpenTelemetry()
             .WithMetrics(metrics =>
             {
-                metrics.SetResourceBuilder(OpenTelemetry.Resources.ResourceBuilder.CreateDefault().AddService(builder.Environment.ApplicationName));
+                metrics.SetResourceBuilder(OpenTelemetry.Resources.ResourceBuilder.CreateDefault().AddService("TestService"));
                 metrics.AddAspNetCoreInstrumentation()
                     .AddHttpClientInstrumentation()
 
@@ -69,8 +69,8 @@ public static class Extensions
             })
             .WithTracing(tracing =>
             {
-                tracing.SetResourceBuilder(OpenTelemetry.Resources.ResourceBuilder.CreateDefault().AddService(builder.Environment.ApplicationName));
-                tracing.AddSource(builder.Environment.ApplicationName)
+                tracing.SetResourceBuilder(OpenTelemetry.Resources.ResourceBuilder.CreateDefault().AddService("TestService"));
+                tracing.AddSource("TestService")
                     .AddAspNetCoreInstrumentation(tracing =>
                         // Exclude health check requests from tracing
                         tracing.Filter = context =>
