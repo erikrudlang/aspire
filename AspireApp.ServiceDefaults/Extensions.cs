@@ -23,7 +23,7 @@ public static class Extensions
 
     public static TBuilder AddServiceDefaults<TBuilder>(this TBuilder builder, ILogger logger) where TBuilder : IHostApplicationBuilder
     {
-        builder.ConfigureOpenTelemetry(logger);
+        // builder.ConfigureOpenTelemetry(logger);
 
         builder.AddDefaultHealthChecks();
 
